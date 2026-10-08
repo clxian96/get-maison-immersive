@@ -24,12 +24,12 @@ const waypoints:CameraKey[]=[
  {p:.055,pos:[0,0,9.2],look:[0,0,0],fov:53},
  {p:.11,pos:[0,0,2.1],look:[0,0,-18],fov:61},
  {p:.15,pos:[0,1.8,-12],look:[0,-.8,-25],fov:62},
- // PRIVACY — submerge, float past silk, reveal its aperture, travel through it
- {p:.21,pos:[-3,2.7,-18],look:[.4,-1,-27],fov:56},
- {p:.255,pos:[2.8,-1.6,-24],look:[0,0,-31],fov:46},
- {p:.305,pos:[4.5,-2,-31],look:[0,0,-38],fov:55},
- {p:.34,pos:[0,0,-34.8],look:[0,0,-40.2],fov:60},
- {p:.37,pos:[0,0,-41.7],look:[0,0,-52],fov:57},
+ // PRIVACY — enter the Library of Silence, drift between shelves, approach the hero book, pass through its opening
+ {p:.21,pos:[-1.8,1.25,-18],look:[0,.45,-25],fov:55},
+ {p:.255,pos:[1.9,.65,-24.5],look:[0,.25,-31.5],fov:47},
+ {p:.305,pos:[4.4,1.1,-31.2],look:[.2,.45,-36.6],fov:56},
+ {p:.34,pos:[0,.7,-35.2],look:[0,.15,-40.0],fov:60},
+ {p:.37,pos:[0,.25,-41.7],look:[0,0,-52],fov:57},
  // ACCESS — pull away, track sideways, dive through bronze keyhole
  {p:.405,pos:[-.5,.2,-45],look:[0,0,-52],fov:61},
  {p:.445,pos:[-3.8,1.1,-48],look:[0,0,-60],fov:56},

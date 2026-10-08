@@ -64,91 +64,113 @@ function CurtainIntro({progress}:{progress:React.MutableRefObject<number>}){
   <spotLight position={[-3,7,7]} angle={1.05} penumbra={1} intensity={90} distance={32} color="#cb9772"/>
  </group>;
 }
-// V4.5 — Privacy: layered submerged silk and underwater atmosphere.
-// Geometry is deformed from immutable rest positions, preventing cumulative distortion.
-function SeaSilk({progress,variant=0}:{progress:React.MutableRefObject<number>,variant?:number}){
- const geometry=useMemo(()=>new THREE.PlaneGeometry(6.9,11.5,36,66),[]);
- const original=useMemo(()=>new Float32Array((geometry.attributes.position.array as Float32Array)),[geometry]);
- const mesh=useRef<THREE.Mesh>(null);
- const params=[
-  {position:[1.2,-.65,-25] as [number,number,number],scale:1,rotation:[.12,.25,-.22] as [number,number,number],color:'#8eb7ad',opacity:.43},
-  {position:[-6.1,.4,-29] as [number,number,number],scale:.85,rotation:[-.08,-.5,.18] as [number,number,number],color:'#477c87',opacity:.25},
-  {position:[7.0,-1.7,-35] as [number,number,number],scale:1.3,rotation:[.05,.85,.12] as [number,number,number],color:'#9bb6a6',opacity:.19}
- ][variant];
- useFrame(({clock})=>{
-  if(!mesh.current)return;
-  const attribute=geometry.attributes.position;
-  const t=progress.current;
-  // Environmental breathing is extremely slow; principal movement is scroll-scrubbed.
-  const breath=Math.sin(clock.elapsedTime*.24+variant*1.7)*.10;
-  const journey=smooth(.19,.37,t);
-  for(let i=0;i<attribute.count;i++){
-   const x=original[3*i],y=original[3*i+1];
-   const ripple=Math.sin(y*.73+x*.29+variant*1.2+journey*2.1+breath);
-   const drift=Math.sin(y*.26+variant+journey*.9);
-   attribute.setXYZ(i,x+drift*.43,y, ripple*.56+Math.cos(x*1.1+y*.12+variant)*.22);
-  }
-  attribute.needsUpdate=true;
-  geometry.computeVertexNormals();
-  mesh.current.rotation.y=params.rotation[1]+journey*(variant===0?.35:-.18);
-  mesh.current.rotation.z=params.rotation[2]+Math.sin(journey*Math.PI)*.07;
- });
- return <mesh ref={mesh} geometry={geometry} position={params.position} scale={params.scale} rotation={params.rotation} frustumCulled={false}>
-  <meshPhysicalMaterial color={params.color} side={THREE.DoubleSide} transparent opacity={params.opacity} roughness={.82} metalness={0} depthWrite={false} transmission={0} />
- </mesh>
+// V4.7 — Privacy: The Library of Silence.
+// Replaces the underwater scene with a heritage-inspired private library.
+// The hero antique book becomes the gateway into Access.
+function BookSpines({count=18,depth=1.2}:{count?:number,depth?:number}){
+ const items=useMemo(()=>Array.from({length:count},(_,i)=>({
+  x:-2.7 + i*(5.4/(count-1)),
+  h:1.05 + ((i*17)%7)*0.16,
+  y:-1.9 + (1.05 + ((i*17)%7)*0.16)/2,
+  z:(i%3)*0.04,
+  c:['#5b3528','#3c4c38','#6d5a43','#73432f','#8a7656'][i%5]
+ })),[count]);
+ return <group>{items.map((b,i)=><mesh key={i} position={[b.x,b.y,b.z]}>
+  <boxGeometry args={[0.24,b.h,depth]}/><meshStandardMaterial color={b.c} roughness={.88}/>
+ </mesh>)}</group>
 }
-function SeaDust(){
+function ShelfColumn({side,z,scale=1}:{side:-1|1,z:number,scale?:number}){
+ const x=side*5.8;
+ return <group position={[x,0,z]} scale={scale}>
+  <mesh position={[0,-.2,0]}><boxGeometry args={[6.2,.28,1.55]}/><meshStandardMaterial color="#4b3324" roughness={.9}/></mesh>
+  <mesh position={[0,4.7,0]}><boxGeometry args={[6.2,.28,1.55]}/><meshStandardMaterial color="#4b3324" roughness={.9}/></mesh>
+  {[-3.15,3.15].map((sx,i)=><mesh key={i} position={[sx,2.2,0]}><boxGeometry args={[.26,5.1,1.55]}/><meshStandardMaterial color="#3b271c" roughness={.88}/></mesh>)}
+  <mesh position={[0,2.15,.68]}><boxGeometry args={[6.05,3.95,.12]}/><meshStandardMaterial color="#231914" roughness={.96}/></mesh>
+  <group position={[0,.03,.05]}><BookSpines count={18} depth={1.08}/></group>
+  <group position={[0,2.14,.05]}><BookSpines count={18} depth={1.08}/></group>
+  <pointLight position={[0,2.6,1.4]} color="#e8bf7b" intensity={8} distance={8}/>
+ </group>
+}
+function ReadingDust(){
  const geometry=useMemo(()=>{
-  const n=440,g=new THREE.BufferGeometry(),positions=new Float32Array(n*3),sizes=new Float32Array(n);
+  const n=320,g=new THREE.BufferGeometry(),positions=new Float32Array(n*3);
   for(let i=0;i<n;i++){
-   const a=i*2.3999632297;
-   const r=2+Math.sqrt(i/n)*16;
-   positions[i*3]=Math.cos(a)*r;
-   positions[i*3+1]=Math.sin(a)*r*.55;
-   positions[i*3+2]=-14-(i%83)*.36;
-   sizes[i]=.025+(i%4)*.007;
+   positions[i*3]=(Math.random()-.5)*16;
+   positions[i*3+1]=(Math.random()-.2)*8;
+   positions[i*3+2]=-14-Math.random()*28;
   }
   g.setAttribute('position',new THREE.BufferAttribute(positions,3));
   return g;
  },[]);
- return <points geometry={geometry}><pointsMaterial color="#92b5b5" transparent opacity={.19} size={.048} sizeAttenuation depthWrite={false}/></points>;
+ return <points geometry={geometry}><pointsMaterial color="#d9c29e" transparent opacity={.16} size={.05} sizeAttenuation depthWrite={false}/></points>
 }
-function OceanRays({progress}:{progress:React.MutableRefObject<number>}){
- const beams=useRef<THREE.Group>(null);
- const cone=useMemo(()=>new THREE.CylinderGeometry(.12,4.0,23,28,1,true),[]);
- useFrame(({clock})=>{
-  if(!beams.current)return;
-  const t=smooth(.14,.37,progress.current);
-  beams.current.rotation.z=Math.sin(clock.elapsedTime*.11)*.035 + .08*t;
-  beams.current.position.x=-2*t;
+function HeroBook({progress}:{progress:React.MutableRefObject<number>}){
+ const left=useRef<THREE.Group>(null),right=useRef<THREE.Group>(null),pages=useRef<THREE.Group>(null);
+ useFrame(()=>{
+  const t=smooth(.255,.36,progress.current);
+  if(left.current) left.current.rotation.y=t*1.08;
+  if(right.current) right.current.rotation.y=-t*1.08;
+  if(pages.current) pages.current.rotation.z=Math.sin(t*Math.PI)*.05;
  });
- return <group ref={beams} position={[0,3,-26]}>
-  {[-9,-3.8,3.3,9].map((x,i)=><mesh key={i} geometry={cone} position={[x,0,-i*2.7]} rotation={[.12,0,(i-1.5)*.11]}>
-   <meshBasicMaterial color={i%2===0?'#73a7aa':'#97b8ba'} transparent opacity={.045} depthWrite={false} side={THREE.DoubleSide} blending={THREE.AdditiveBlending}/>
-  </mesh>)}
- </group>
-}
-function Ocean({progress}:{progress:React.MutableRefObject<number>}){
- const surface=useRef<THREE.Mesh>(null);
- useFrame(({clock})=>{
-  if(surface.current){surface.current.rotation.z=Math.sin(clock.elapsedTime*.12)*.018;}
- });
- return <group>
-  <SeaDust/>
-  <OceanRays progress={progress}/>
-  <SeaSilk progress={progress} variant={0}/>
-  <SeaSilk progress={progress} variant={1}/>
-  <SeaSilk progress={progress} variant={2}/>
-  <mesh ref={surface} position={[0,12,-30]} rotation={[-Math.PI/2,0,0]}>
-   <planeGeometry args={[95,85,10,10]}/>
-   <meshStandardMaterial color="#23505a" roughness={.72} transparent opacity={.29} depthWrite={false}/>
-  </mesh>
-  <hemisphereLight color="#86b3bb" groundColor="#061621" intensity={.7}/>
-  <spotLight position={[1,13,-22]} angle={.58} penumbra={1} intensity={95} distance={55} color="#7babb9"/>
-  <pointLight position={[-5,5,-27]} intensity={19} color="#477c89" distance={30}/>
-  <pointLight position={[8,-4,-32]} intensity={12} color="#3d6978" distance={29}/>
+ return <group position={[0,-1.15,-38.6]}>
+  <mesh position={[0,-2.78,0]} rotation={[-Math.PI/2,0,0]}><cylinderGeometry args={[2.55,2.85,.72,36]}/><meshStandardMaterial color="#38261c" roughness={.92}/></mesh>
+  <group position={[0,-.05,0]} ref={pages}>
+   <group ref={left} position={[-.02,0,0]}>
+    <mesh position={[-1.72,0,0]}><boxGeometry args={[3.45,.2,5.45]}/><meshStandardMaterial color="#6f462f" roughness={.82}/></mesh>
+    <mesh position={[-1.72,.13,0]}><boxGeometry args={[3.2,.11,5.1]}/><meshStandardMaterial color="#d8ccb4" roughness={.96}/></mesh>
+   </group>
+   <group ref={right} position={[.02,0,0]}>
+    <mesh position={[1.72,0,0]}><boxGeometry args={[3.45,.2,5.45]}/><meshStandardMaterial color="#6f462f" roughness={.82}/></mesh>
+    <mesh position={[1.72,.13,0]}><boxGeometry args={[3.2,.11,5.1]}/><meshStandardMaterial color="#e3d7c1" roughness={.96}/></mesh>
+   </group>
+  </group>
+  <mesh position={[0,.22,0]} rotation={[Math.PI/2,0,0]}><torusGeometry args={[1.95,.28,12,90]}/><meshStandardMaterial color="#d9c7a2" roughness={.86}/></mesh>
+  <pointLight position={[0,2.8,1.4]} intensity={14} color="#e9c996" distance={10}/>
  </group>;
 }
+function LibrarySilence({progress}:{progress:React.MutableRefObject<number>}){
+ const lamps=useRef<THREE.Group>(null);
+ useFrame(({clock})=>{
+  if(lamps.current){lamps.current.position.y=Math.sin(clock.elapsedTime*.22)*.08;}
+ });
+ return <group>
+  <ReadingDust/>
+  {[-16.5,-22.5,-28.8].map((z,i)=><React.Fragment key={i}><ShelfColumn side={-1} z={z} scale={1-i*.05}/><ShelfColumn side={1} z={z} scale={1-i*.05}/></React.Fragment>)}
+  <mesh position={[0,-4.05,-24]} rotation={[-Math.PI/2,0,0]}><planeGeometry args={[16,36]}/><meshStandardMaterial color="#241914" roughness={.97}/></mesh>
+  <group ref={lamps}>
+   {[-18.2,-25.8,-33.3].map((z,i)=><group key={i} position={[0,4.2,z]}>
+    <mesh><sphereGeometry args={[.22,10,8]}/><meshStandardMaterial color="#ac855b" metalness={.4} roughness={.4}/></mesh>
+    <mesh position={[0,-.95,0]}><cylinderGeometry args={[.05,.05,1.8,8]}/><meshStandardMaterial color="#977451" metalness={.35} roughness={.46}/></mesh>
+    <pointLight position={[0,-1.5,.5]} intensity={14} color="#f2c37c" distance={11}/>
+   </group>)}
+  </group>
+  <HeroBook progress={progress}/>
+  <hemisphereLight color="#b89d78" groundColor="#120d0b" intensity={.45}/>
+  <spotLight position={[0,7.2,-33]} angle={.72} penumbra={1} intensity={80} distance={38} color="#f1d4a6"/>
+  <pointLight position={[-5,2,-20]} intensity={10} color="#9d7856" distance={16}/>
+  <pointLight position={[5,2,-20]} intensity={10} color="#9d7856" distance={16}/>
+ </group>;
+}
+
+function BookAperture({progress}:{progress:React.MutableRefObject<number>}){
+ const group=useRef<THREE.Group>(null);
+ useFrame(({clock})=>{
+  if(!group.current)return;
+  const e=smooth(.29,.365,progress.current);
+  group.current.rotation.z=Math.sin(clock.elapsedTime*.18)*.012 + e*.06;
+  group.current.scale.setScalar(.92+e*.22);
+ });
+ return <group position={[0,.2,-39.2]} ref={group}>
+  <mesh rotation={[Math.PI/2,0,0]}><torusGeometry args={[2.05,.22,12,80]}/><meshStandardMaterial color="#e0d4be" roughness={.92}/></mesh>
+  {Array.from({length:10},(_,i)=>{
+   const a=i*Math.PI*2/10; return <mesh key={i} position={[Math.cos(a)*2.1,Math.sin(a)*2.1,-.18]} rotation={[0,0,a+Math.PI/2]}>
+    <planeGeometry args={[.52,2.4,1,8]}/><meshStandardMaterial color={i%2?'#d7ccb7':'#c8b79a'} side={THREE.DoubleSide} transparent opacity={.7} depthWrite={false}/>
+   </mesh>
+  })}
+  <pointLight position={[0,2.2,1.5]} intensity={10} color="#f1d2a3" distance={10}/>
+ </group>;
+}
+
 function Arch({z,x=0,scale=1}:{z:number,x?:number,scale?:number}){const shape=useMemo(()=>{let s=new THREE.Shape();s.moveTo(-3.3,-4);s.lineTo(-3.3,1);s.absarc(0,1,3.3,Math.PI,0,true);s.lineTo(3.3,-4);s.lineTo(2.35,-4);s.lineTo(2.35,1);s.absarc(0,1,2.35,0,Math.PI,false);s.lineTo(-2.35,-4);s.closePath();return s},[]);return <group position={[x,0,z]} scale={scale}><mesh><extrudeGeometry args={[shape,{depth:1,bevelEnabled:true,bevelSize:.09,bevelThickness:.09,bevelSegments:2,curveSegments:24}]}/><meshStandardMaterial color={stone} roughness={.94}/></mesh><mesh position={[0,1,.98]}><torusGeometry args={[2.81,.042,8,90,Math.PI]}/><meshStandardMaterial color={bronze} metalness={.7} roughness={.4}/></mesh><mesh position={[0,-3.95,.8]}><boxGeometry args={[7.2,.16,1.9]}/><meshStandardMaterial color="#79583a" roughness={.56} metalness={.3}/></mesh></group>}
 function Access({progress}:{progress:React.MutableRefObject<number>}){const doorL=useRef<THREE.Group>(null),doorR=useRef<THREE.Group>(null);useFrame(()=>{const t=smooth(.43,.53,progress.current);if(doorL.current)doorL.current.rotation.y=-t*1.25;if(doorR.current)doorR.current.rotation.y=t*1.25});return <group><Arch z={-52}/><Arch z={-60} x={1} scale={.92}/><Arch z={-68} x={-.7} scale={.8}/><group position={[0,0,-51]}><group ref={doorL} position={[-2.15,0,.45]}><mesh position={[1.05,-.6,0]}><boxGeometry args={[2.1,7.3,.16]}/><meshStandardMaterial color="#593e2c" metalness={.25} roughness={.68}/></mesh></group><group ref={doorR} position={[2.15,0,.45]}><mesh position={[-1.05,-.6,0]}><boxGeometry args={[2.1,7.3,.16]}/><meshStandardMaterial color="#593e2c" metalness={.25} roughness={.68}/></mesh></group></group><mesh position={[0,-4,-59]} rotation={[-Math.PI/2,0,0]}><planeGeometry args={[27,34]}/><meshStandardMaterial color="#34261e" roughness={.93}/></mesh><pointLight position={[3,3,-62]} color="#ebb879" intensity={90} distance={29}/></group>}
 function Limb({from,to,r=.14,color='#d7c3ad'}:{from:[number,number,number],to:[number,number,number],r?:number,color?:string}){const a=new THREE.Vector3(...from),b=new THREE.Vector3(...to),mid=a.clone().add(b).multiplyScalar(.5),len=a.distanceTo(b),rotation=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),b.clone().sub(a).normalize());return <mesh position={mid.toArray()} quaternion={rotation}><cylinderGeometry args={[r*.8,r,len,10]}/><meshStandardMaterial color={color} roughness={.7}/></mesh>}
@@ -207,6 +229,6 @@ function BalletLensTransition({progress}:{progress:React.MutableRefObject<number
  </group>;
 }
 
-const palette=[new THREE.Color('#260e18'),new THREE.Color('#071b29'),new THREE.Color('#312217'),new THREE.Color('#251b17'),new THREE.Color('#0b2620'),new THREE.Color('#280e1a')];
+const palette=[new THREE.Color('#260e18'),new THREE.Color('#1a130f'),new THREE.Color('#312217'),new THREE.Color('#251b17'),new THREE.Color('#0b2620'),new THREE.Color('#280e1a')];
 function Atmosphere({progress}:{progress:React.MutableRefObject<number>}){const {scene}=useThree();const background=useMemo(()=>new THREE.Color(),[]);const fog=useMemo(()=>new THREE.Fog('#260e18',16,60),[]);useFrame(()=>{const t=progress.current;const keys=[0,.15,.37,.57,.76,.96];let i=0;while(i<keys.length-2&&t>keys[i+1])i++;const f=smooth(keys[i],keys[i+1],t);background.copy(palette[i]).lerp(palette[i+1],f);scene.background=background;fog.color.copy(background);scene.fog=fog});return null}
-export default function Worlds({progress}:{progress:React.MutableRefObject<number>}){return <><Atmosphere progress={progress}/><ambientLight color="#caa68a" intensity={.7}/><directionalLight position={[-8,9,6]} intensity={1.1} color="#debd9d"/><CurtainIntro progress={progress}/><Ocean progress={progress}/><SilkAperture progress={progress}/><Access progress={progress}/><BronzeKeyhole progress={progress}/><Ballet progress={progress}/><BalletLensTransition progress={progress}/><Optics progress={progress}/></>}
+export default function Worlds({progress}:{progress:React.MutableRefObject<number>}){return <><Atmosphere progress={progress}/><ambientLight color="#caa68a" intensity={.7}/><directionalLight position={[-8,9,6]} intensity={1.1} color="#debd9d"/><CurtainIntro progress={progress}/><LibrarySilence progress={progress}/><BookAperture progress={progress}/><Access progress={progress}/><BronzeKeyhole progress={progress}/><Ballet progress={progress}/><BalletLensTransition progress={progress}/><Optics progress={progress}/></>}
