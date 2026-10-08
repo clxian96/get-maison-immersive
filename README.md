@@ -36,3 +36,15 @@ The stage dancer is a stylised procedural placeholder; premium human motion requ
 ## Deploy
 
 Push project files (excluding `node_modules` and `.next`) to GitHub; import the repository into Vercel using Next.js framework preset. Deploy as a preview first to avoid changing the current client site until reviewed.
+
+
+## V4.8 — Light & Dark Cinematic Journey
+- Intro: dark burgundy velvet.
+- Privacy: warmly illuminated library with reading lamps and improved depth.
+- Access: brighter champagne limestone and amber architecture.
+- Confidence: focused ivory spotlight on a charcoal stage.
+- Recognition: warm parchment/aged brass environment rather than dark emerald.
+- Final: returns to deep burgundy.
+- Existing scene order, text, fonts, and reversible scroll camera system preserved.
+
+**Status**: This package is a source prototype. Browser and production-build verification should be completed before client deployment.
