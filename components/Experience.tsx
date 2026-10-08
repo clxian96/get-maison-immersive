@@ -20,24 +20,34 @@ const boundaries=[0,.13,.19,.37,.57,.765,.91,.965,1];
 // Coordinates are aligned with the procedural stage positions in Worlds.tsx.
 type CameraKey={p:number;pos:[number,number,number];look:[number,number,number];fov:number};
 const waypoints:CameraKey[]=[
- {p:0,pos:[0,0,13],look:[0,0,1],fov:57},
- {p:.07,pos:[0,0,8],look:[0,0,-8],fov:49},
- {p:.145,pos:[0,2.6,-10],look:[0,0,-25],fov:58},
- {p:.20,pos:[-3.5,2.8,-17],look:[.5,-1.2,-25],fov:59},
- {p:.255,pos:[.8,-1.8,-21],look:[1.5,-1,-27],fov:48},
- {p:.305,pos:[4.8,-2.3,-28],look:[0,-.3,-30],fov:53},
- {p:.345,pos:[-2.8,-.4,-34],look:[0,0,-39],fov:64},
- {p:.37,pos:[0,-1,-39],look:[0,0,-52],fov:61},
- {p:.44,pos:[-2.5,.2,-46],look:[0,0,-53],fov:57},
- {p:.51,pos:[1.5,0,-57],look:[0,0,-64],fov:48},
- {p:.57,pos:[0,0,-73],look:[0,0,-85],fov:53},
- {p:.64,pos:[4.4,1,-81],look:[0,0,-85],fov:49},
- {p:.71,pos:[-3,1.2,-84],look:[0,0,-85],fov:44},
- {p:.765,pos:[0,.2,-96],look:[0,0,-110],fov:57},
- {p:.83,pos:[-1.4,.6,-105],look:[0,.3,-117],fov:48},
- {p:.9,pos:[.8,.4,-119],look:[0,.3,-127],fov:44},
- {p:.96,pos:[0,0,-121],look:[0,.3,-128],fov:62},
- {p:1,pos:[0,0,-117],look:[0,0,-128],fov:57}
+ {p:0,pos:[0,0,13],look:[0,0,0],fov:57},
+ {p:.055,pos:[0,0,9.2],look:[0,0,0],fov:53},
+ {p:.11,pos:[0,0,2.1],look:[0,0,-18],fov:61},
+ {p:.15,pos:[0,1.8,-12],look:[0,-.8,-25],fov:62},
+ // PRIVACY — submerge, float past silk, reveal its aperture, travel through it
+ {p:.21,pos:[-3,2.7,-18],look:[.4,-1,-27],fov:56},
+ {p:.255,pos:[2.8,-1.6,-24],look:[0,0,-31],fov:46},
+ {p:.305,pos:[4.5,-2,-31],look:[0,0,-38],fov:55},
+ {p:.34,pos:[0,0,-34.8],look:[0,0,-40.2],fov:60},
+ {p:.37,pos:[0,0,-41.7],look:[0,0,-52],fov:57},
+ // ACCESS — pull away, track sideways, dive through bronze keyhole
+ {p:.405,pos:[-.5,.2,-45],look:[0,0,-52],fov:61},
+ {p:.445,pos:[-3.8,1.1,-48],look:[0,0,-60],fov:56},
+ {p:.49,pos:[1.5,.25,-58],look:[0,.1,-69],fov:51},
+ {p:.535,pos:[0,0,-69.4],look:[0,0,-75],fov:48},
+ {p:.57,pos:[0,0,-78],look:[0,0,-85],fov:60},
+ // CONFIDENCE — pull back from silhouette, arc around her, through dance circle
+ {p:.605,pos:[0,1,-78.5],look:[0,-.2,-85],fov:49},
+ {p:.65,pos:[4.7,.8,-82],look:[0,-.4,-85],fov:50},
+ {p:.7,pos:[-4.1,1.3,-82.6],look:[0,-.1,-85],fov:44},
+ {p:.745,pos:[0,.3,-89],look:[0,0,-99],fov:55},
+ {p:.765,pos:[0,0,-99],look:[0,0,-111],fov:57},
+ // RECOGNITION — macro optical traversal then grand reverse reveal
+ {p:.815,pos:[-1,.5,-107],look:[0,.2,-117],fov:49},
+ {p:.85,pos:[0,.3,-117.1],look:[0,.3,-125],fov:39},
+ {p:.89,pos:[.15,.3,-123.6],look:[0,.3,-127.5],fov:43},
+ {p:.94,pos:[0,.1,-115],look:[0,.2,-126],fov:62},
+ {p:1,pos:[0,0,-109],look:[0,.3,-127],fov:60}
 ];
 const clamp01=(x:number)=>THREE.MathUtils.clamp(x,0,1);
 // Non-stopping cubic Hermite motion: scroll positions match exactly, but the camera
@@ -61,8 +71,8 @@ function CameraDirector({progress,mouse}:{progress:React.MutableRefObject<number
  const {camera}=useThree();const look=useRef(new THREE.Vector3(0,0,-20));
  useFrame((_,delta)=>{
   const pose=getPose(progress.current);
-  const damping=1-Math.exp(-Math.min(delta,.06)*9.0);
-  const pointerScale=.075;
+  const damping=1-Math.exp(-Math.min(delta,.06)*10.5);
+  const pointerScale=.045;
   pose.pos.x+=mouse.current.x*pointerScale;
   pose.pos.y+=mouse.current.y*pointerScale*.5;
   camera.position.lerp(pose.pos,damping);

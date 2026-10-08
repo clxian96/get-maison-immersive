@@ -155,6 +155,58 @@ function Limb({from,to,r=.14,color='#d7c3ad'}:{from:[number,number,number],to:[n
 function Dancer({progress}:{progress:React.MutableRefObject<number>}){const figure=useRef<THREE.Group>(null),arms=useRef<THREE.Group>(null);useFrame(()=>{const t=smooth(.62,.755,progress.current);if(figure.current){figure.current.rotation.y=t*Math.PI*1.8;figure.current.position.y=.1+Math.sin(t*Math.PI)*.26}if(arms.current){arms.current.rotation.z=Math.sin(t*Math.PI)*.3;}});return <group ref={figure} position={[0,0,-85]}><mesh position={[0,1.1,0]}><sphereGeometry args={[.43,18,14]}/><meshStandardMaterial color="#cfbba7" roughness={.77}/></mesh><mesh position={[0,-.05,0]}><cylinderGeometry args={[.35,.23,1.85,20]}/><meshStandardMaterial color="#e2d6c5" roughness={.88}/></mesh><mesh position={[0,-1.05,0]}><cylinderGeometry args={[.9,.25,.67,32]}/><meshStandardMaterial color="#d7c8b3" roughness={.92} side={THREE.DoubleSide}/></mesh><group ref={arms}><Limb from={[-.28,.55,0]} to={[-.8,1.05,0]} r={.13}/><Limb from={[-.8,1.05,0]} to={[-1,1.7,0]} r={.10}/><Limb from={[.28,.55,0]} to={[.8,1.05,0]} r={.13}/><Limb from={[.8,1.05,0]} to={[1,1.7,0]} r={.10}/></group><Limb from={[-.22,-1.22,0]} to={[-.38,-2.45,.12]} r={.18}/><Limb from={[-.38,-2.45,.12]} to={[-.38,-3.35,.25]} r={.12}/><Limb from={[.22,-1.22,0]} to={[.4,-2.3,-.2]} r={.18}/><Limb from={[.4,-2.3,-.2]} to={[1.4,-2.3,-.15]} r={.11}/></group>}
 function Ballet({progress}:{progress:React.MutableRefObject<number>}){return <group><Dancer progress={progress}/><mesh position={[0,-3.5,-85]} rotation={[-Math.PI/2,0,0]}><circleGeometry args={[12,64]}/><meshStandardMaterial color="#36271f" roughness={.74}/></mesh><mesh position={[0,-3.48,-85]} rotation={[-Math.PI/2,0,0]}><ringGeometry args={[4.7,4.75,100]}/><meshStandardMaterial color="#8b704d" roughness={.6}/></mesh><spotLight position={[-1,10,-81]} angle={.29} penumbra={.85} intensity={195} color="#ffdab0" distance={27}/><pointLight position={[4,1,-83]} intensity={12} color="#8a583e" distance={19}/></group>}
 function Optics({progress}:{progress:React.MutableRefObject<number>}){const rings=useRef<THREE.Group>(null);useFrame(()=>{const t=smooth(.78,.95,progress.current);if(rings.current){rings.current.rotation.y=(t-.5)*.3;rings.current.rotation.z=t*.15}});return <group><group ref={rings}>{[0,1,2,3,4].map((i)=><group key={i} position={[Math.sin(i*1.7)*.65,.3,-110-i*3.4]}><mesh><torusGeometry args={[3.5-i*.27,.16,12,96]}/><meshStandardMaterial color={bronze} metalness={.7} roughness={.32}/></mesh><mesh><torusGeometry args={[3.18-i*.27,.035,8,96]}/><meshStandardMaterial color="#e4cc9d" metalness={.52} roughness={.4}/></mesh><mesh position={[0,-3.5,0]}><cylinderGeometry args={[.14,.2,2.8,12]}/><meshStandardMaterial color={bronze} roughness={.39} metalness={.5}/></mesh></group>)}</group><mesh position={[0,.3,-127]}><sphereGeometry args={[1.1,28,20]}/><meshPhysicalMaterial color="#9cae91" transmission={.5} roughness={.13} thickness={1} metalness={.04}/></mesh><pointLight position={[2,5,-118]} color="#a5b18b" intensity={62} distance={28}/></group>}
+
+// V4.6 spatial gateways: geometry is physically present in the same 3D space.
+// All transformations are pure functions of scroll progress and reverse with the wheel.
+function SilkAperture({progress}:{progress:React.MutableRefObject<number>}){
+ const group=useRef<THREE.Group>(null);
+ const ribbons=useMemo(()=>Array.from({length:16},(_,i)=>({angle:i*Math.PI*2/16,phase:i*.63})),[]);
+ useFrame(({clock})=>{
+  if(!group.current)return;
+  const e=smooth(.285,.365,progress.current);
+  group.current.rotation.z=e*.16+Math.sin(clock.elapsedTime*.14)*.014;
+  group.current.scale.setScalar(.87+e*.2);
+ });
+ return <group position={[0,0,-39.2]} ref={group}>
+  <mesh><torusGeometry args={[3.65,.35,14,96]}/><meshStandardMaterial color="#5b979a" transparent opacity={.66} roughness={.95} side={THREE.DoubleSide}/></mesh>
+  {ribbons.map((r,i)=><mesh key={i} position={[Math.cos(r.angle)*3.7,Math.sin(r.angle)*3.7,-.25]} rotation={[0,0,r.angle+Math.PI/2]}>
+   <planeGeometry args={[1.0,3.1,2,8]}/><meshStandardMaterial color={i%2?'#769ea4':'#416e80'} side={THREE.DoubleSide} transparent opacity={.33} depthWrite={false}/>
+  </mesh>)}
+  <pointLight position={[0,3,2]} intensity={12} color="#6896a1" distance={12}/>
+ </group>;
+}
+function BronzeKeyhole({progress}:{progress:React.MutableRefObject<number>}){
+ const left=useRef<THREE.Group>(null),right=useRef<THREE.Group>(null);
+ useFrame(()=>{
+  const t=smooth(.495,.565,progress.current);
+  if(left.current)left.current.rotation.y=-t*.94;
+  if(right.current)right.current.rotation.y=t*.94;
+ });
+ return <group position={[0,0,-73]}>
+  <mesh><torusGeometry args={[3.45,.41,14,96]}/><meshStandardMaterial color="#775535" metalness={.58} roughness={.46}/></mesh>
+  <mesh><torusGeometry args={[3.08,.055,8,96]}/><meshStandardMaterial color="#d0a878" metalness={.68} roughness={.33}/></mesh>
+  <group ref={left} position={[-3.25,0,0]}><mesh position={[1.65,0,0]}><boxGeometry args={[3.3,7.0,.32]}/><meshStandardMaterial color="#654a32" metalness={.35} roughness={.67}/></mesh></group>
+  <group ref={right} position={[3.25,0,0]}><mesh position={[-1.65,0,0]}><boxGeometry args={[3.3,7.0,.32]}/><meshStandardMaterial color="#654a32" metalness={.35} roughness={.67}/></mesh></group>
+  <pointLight position={[0,0,-2]} intensity={36} color="#e9bf8d" distance={17}/>
+ </group>;
+}
+function BalletLensTransition({progress}:{progress:React.MutableRefObject<number>}){
+ const ring=useRef<THREE.Group>(null);
+ useFrame(()=>{
+  if(!ring.current)return;
+  const t=smooth(.695,.77,progress.current);
+  ring.current.rotation.z=-t*Math.PI*.45;
+  ring.current.rotation.y=t*.18;
+  ring.current.scale.setScalar(.84+t*.28);
+ });
+ return <group position={[0,0,-98]} ref={ring}>
+  <mesh><torusGeometry args={[3.6,.16,14,108]}/><meshStandardMaterial color="#c7aa82" roughness={.49} metalness={.35}/></mesh>
+  <mesh><torusGeometry args={[3.27,.035,8,108]}/><meshStandardMaterial color="#ead8b8" roughness={.48} metalness={.25}/></mesh>
+  {Array.from({length:16},(_,i)=><mesh key={i} rotation={[0,0,i*Math.PI/8]} position={[Math.cos(i*Math.PI/8)*3.5,Math.sin(i*Math.PI/8)*3.5,0]}>
+   <boxGeometry args={[.1,.32,.09]}/><meshStandardMaterial color="#9e784c" metalness={.4} roughness={.5}/></mesh>)}
+ </group>;
+}
+
 const palette=[new THREE.Color('#260e18'),new THREE.Color('#071b29'),new THREE.Color('#312217'),new THREE.Color('#251b17'),new THREE.Color('#0b2620'),new THREE.Color('#280e1a')];
 function Atmosphere({progress}:{progress:React.MutableRefObject<number>}){const {scene}=useThree();const background=useMemo(()=>new THREE.Color(),[]);const fog=useMemo(()=>new THREE.Fog('#260e18',16,60),[]);useFrame(()=>{const t=progress.current;const keys=[0,.15,.37,.57,.76,.96];let i=0;while(i<keys.length-2&&t>keys[i+1])i++;const f=smooth(keys[i],keys[i+1],t);background.copy(palette[i]).lerp(palette[i+1],f);scene.background=background;fog.color.copy(background);scene.fog=fog});return null}
-export default function Worlds({progress}:{progress:React.MutableRefObject<number>}){return <><Atmosphere progress={progress}/><ambientLight color="#caa68a" intensity={.7}/><directionalLight position={[-8,9,6]} intensity={1.1} color="#debd9d"/><CurtainIntro progress={progress}/><Ocean progress={progress}/><Access progress={progress}/><Ballet progress={progress}/><Optics progress={progress}/></>}
+export default function Worlds({progress}:{progress:React.MutableRefObject<number>}){return <><Atmosphere progress={progress}/><ambientLight color="#caa68a" intensity={.7}/><directionalLight position={[-8,9,6]} intensity={1.1} color="#debd9d"/><CurtainIntro progress={progress}/><Ocean progress={progress}/><SilkAperture progress={progress}/><Access progress={progress}/><BronzeKeyhole progress={progress}/><Ballet progress={progress}/><BalletLensTransition progress={progress}/><Optics progress={progress}/></>}
