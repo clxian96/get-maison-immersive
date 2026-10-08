@@ -64,13 +64,91 @@ function CurtainIntro({progress}:{progress:React.MutableRefObject<number>}){
   <spotLight position={[-3,7,7]} angle={1.05} penumbra={1} intensity={90} distance={32} color="#cb9772"/>
  </group>;
 }
-function SeaSilk({progress}:{progress:React.MutableRefObject<number>}){
- const geo=useMemo(()=>new THREE.PlaneGeometry(6.5,11,45,90),[]);const mesh=useRef<THREE.Mesh>(null);
- useFrame((s)=>{if(!mesh.current)return;const p=geo.attributes.position,elapsed=s.clock.elapsedTime,t=progress.current;for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i);p.setZ(i,Math.sin(y*.8+elapsed*.55+x*.3)*.65+Math.cos(x*1.3+elapsed*.3)*.27);p.setX(i,x+Math.sin(y*.32+elapsed*.2)*.48);}p.needsUpdate=true;geo.computeVertexNormals();mesh.current.rotation.y=.25+smooth(.2,.36,t)*.45;});
- return <mesh ref={mesh} geometry={geo} position={[1,-.1,-25]} rotation={[.2,.3,-.2]}><meshPhysicalMaterial color="#8aaca7" side={THREE.DoubleSide} transparent opacity={.48} roughness={.48} metalness={.05} depthWrite={false}/></mesh>
+// V4.5 — Privacy: layered submerged silk and underwater atmosphere.
+// Geometry is deformed from immutable rest positions, preventing cumulative distortion.
+function SeaSilk({progress,variant=0}:{progress:React.MutableRefObject<number>,variant?:number}){
+ const geometry=useMemo(()=>new THREE.PlaneGeometry(6.9,11.5,36,66),[]);
+ const original=useMemo(()=>new Float32Array((geometry.attributes.position.array as Float32Array)),[geometry]);
+ const mesh=useRef<THREE.Mesh>(null);
+ const params=[
+  {position:[1.2,-.65,-25] as [number,number,number],scale:1,rotation:[.12,.25,-.22] as [number,number,number],color:'#8eb7ad',opacity:.43},
+  {position:[-6.1,.4,-29] as [number,number,number],scale:.85,rotation:[-.08,-.5,.18] as [number,number,number],color:'#477c87',opacity:.25},
+  {position:[7.0,-1.7,-35] as [number,number,number],scale:1.3,rotation:[.05,.85,.12] as [number,number,number],color:'#9bb6a6',opacity:.19}
+ ][variant];
+ useFrame(({clock})=>{
+  if(!mesh.current)return;
+  const attribute=geometry.attributes.position;
+  const t=progress.current;
+  // Environmental breathing is extremely slow; principal movement is scroll-scrubbed.
+  const breath=Math.sin(clock.elapsedTime*.24+variant*1.7)*.10;
+  const journey=smooth(.19,.37,t);
+  for(let i=0;i<attribute.count;i++){
+   const x=original[3*i],y=original[3*i+1];
+   const ripple=Math.sin(y*.73+x*.29+variant*1.2+journey*2.1+breath);
+   const drift=Math.sin(y*.26+variant+journey*.9);
+   attribute.setXYZ(i,x+drift*.43,y, ripple*.56+Math.cos(x*1.1+y*.12+variant)*.22);
+  }
+  attribute.needsUpdate=true;
+  geometry.computeVertexNormals();
+  mesh.current.rotation.y=params.rotation[1]+journey*(variant===0?.35:-.18);
+  mesh.current.rotation.z=params.rotation[2]+Math.sin(journey*Math.PI)*.07;
+ });
+ return <mesh ref={mesh} geometry={geometry} position={params.position} scale={params.scale} rotation={params.rotation} frustumCulled={false}>
+  <meshPhysicalMaterial color={params.color} side={THREE.DoubleSide} transparent opacity={params.opacity} roughness={.82} metalness={0} depthWrite={false} transmission={0} />
+ </mesh>
 }
-function SeaDust(){const geo=useMemo(()=>{const n=320,g=new THREE.BufferGeometry(),a=new Float32Array(n*3);for(let i=0;i<n;i++){a[i*3]=Math.sin(i*8.12)*14;a[i*3+1]=Math.cos(i*3.72)*9;a[i*3+2]=-13-(i%67)*.55;}g.setAttribute('position',new THREE.BufferAttribute(a,3));return g},[]);return <points geometry={geo}><pointsMaterial color="#8daead" transparent opacity={.24} size={.045} sizeAttenuation depthWrite={false}/></points>}
-function Ocean({progress}:{progress:React.MutableRefObject<number>}){return <group><SeaDust/><SeaSilk progress={progress}/><mesh position={[0,12,-26]} rotation={[-Math.PI/2,0,0]}><planeGeometry args={[95,85]}/><meshStandardMaterial color="#123d45" roughness={.35} transparent opacity={.36}/></mesh><spotLight position={[4,11,-24]} angle={.47} penumbra={1} intensity={120} distance={34} color="#6496a7"/><pointLight position={[-5,1,-28]} intensity={22} color="#477d89" distance={26}/></group>}
+function SeaDust(){
+ const geometry=useMemo(()=>{
+  const n=440,g=new THREE.BufferGeometry(),positions=new Float32Array(n*3),sizes=new Float32Array(n);
+  for(let i=0;i<n;i++){
+   const a=i*2.3999632297;
+   const r=2+Math.sqrt(i/n)*16;
+   positions[i*3]=Math.cos(a)*r;
+   positions[i*3+1]=Math.sin(a)*r*.55;
+   positions[i*3+2]=-14-(i%83)*.36;
+   sizes[i]=.025+(i%4)*.007;
+  }
+  g.setAttribute('position',new THREE.BufferAttribute(positions,3));
+  return g;
+ },[]);
+ return <points geometry={geometry}><pointsMaterial color="#92b5b5" transparent opacity={.19} size={.048} sizeAttenuation depthWrite={false}/></points>;
+}
+function OceanRays({progress}:{progress:React.MutableRefObject<number>}){
+ const beams=useRef<THREE.Group>(null);
+ const cone=useMemo(()=>new THREE.CylinderGeometry(.12,4.0,23,28,1,true),[]);
+ useFrame(({clock})=>{
+  if(!beams.current)return;
+  const t=smooth(.14,.37,progress.current);
+  beams.current.rotation.z=Math.sin(clock.elapsedTime*.11)*.035 + .08*t;
+  beams.current.position.x=-2*t;
+ });
+ return <group ref={beams} position={[0,3,-26]}>
+  {[-9,-3.8,3.3,9].map((x,i)=><mesh key={i} geometry={cone} position={[x,0,-i*2.7]} rotation={[.12,0,(i-1.5)*.11]}>
+   <meshBasicMaterial color={i%2===0?'#73a7aa':'#97b8ba'} transparent opacity={.045} depthWrite={false} side={THREE.DoubleSide} blending={THREE.AdditiveBlending}/>
+  </mesh>)}
+ </group>
+}
+function Ocean({progress}:{progress:React.MutableRefObject<number>}){
+ const surface=useRef<THREE.Mesh>(null);
+ useFrame(({clock})=>{
+  if(surface.current){surface.current.rotation.z=Math.sin(clock.elapsedTime*.12)*.018;}
+ });
+ return <group>
+  <SeaDust/>
+  <OceanRays progress={progress}/>
+  <SeaSilk progress={progress} variant={0}/>
+  <SeaSilk progress={progress} variant={1}/>
+  <SeaSilk progress={progress} variant={2}/>
+  <mesh ref={surface} position={[0,12,-30]} rotation={[-Math.PI/2,0,0]}>
+   <planeGeometry args={[95,85,10,10]}/>
+   <meshStandardMaterial color="#23505a" roughness={.72} transparent opacity={.29} depthWrite={false}/>
+  </mesh>
+  <hemisphereLight color="#86b3bb" groundColor="#061621" intensity={.7}/>
+  <spotLight position={[1,13,-22]} angle={.58} penumbra={1} intensity={95} distance={55} color="#7babb9"/>
+  <pointLight position={[-5,5,-27]} intensity={19} color="#477c89" distance={30}/>
+  <pointLight position={[8,-4,-32]} intensity={12} color="#3d6978" distance={29}/>
+ </group>;
+}
 function Arch({z,x=0,scale=1}:{z:number,x?:number,scale?:number}){const shape=useMemo(()=>{let s=new THREE.Shape();s.moveTo(-3.3,-4);s.lineTo(-3.3,1);s.absarc(0,1,3.3,Math.PI,0,true);s.lineTo(3.3,-4);s.lineTo(2.35,-4);s.lineTo(2.35,1);s.absarc(0,1,2.35,0,Math.PI,false);s.lineTo(-2.35,-4);s.closePath();return s},[]);return <group position={[x,0,z]} scale={scale}><mesh><extrudeGeometry args={[shape,{depth:1,bevelEnabled:true,bevelSize:.09,bevelThickness:.09,bevelSegments:2,curveSegments:24}]}/><meshStandardMaterial color={stone} roughness={.94}/></mesh><mesh position={[0,1,.98]}><torusGeometry args={[2.81,.042,8,90,Math.PI]}/><meshStandardMaterial color={bronze} metalness={.7} roughness={.4}/></mesh><mesh position={[0,-3.95,.8]}><boxGeometry args={[7.2,.16,1.9]}/><meshStandardMaterial color="#79583a" roughness={.56} metalness={.3}/></mesh></group>}
 function Access({progress}:{progress:React.MutableRefObject<number>}){const doorL=useRef<THREE.Group>(null),doorR=useRef<THREE.Group>(null);useFrame(()=>{const t=smooth(.43,.53,progress.current);if(doorL.current)doorL.current.rotation.y=-t*1.25;if(doorR.current)doorR.current.rotation.y=t*1.25});return <group><Arch z={-52}/><Arch z={-60} x={1} scale={.92}/><Arch z={-68} x={-.7} scale={.8}/><group position={[0,0,-51]}><group ref={doorL} position={[-2.15,0,.45]}><mesh position={[1.05,-.6,0]}><boxGeometry args={[2.1,7.3,.16]}/><meshStandardMaterial color="#593e2c" metalness={.25} roughness={.68}/></mesh></group><group ref={doorR} position={[2.15,0,.45]}><mesh position={[-1.05,-.6,0]}><boxGeometry args={[2.1,7.3,.16]}/><meshStandardMaterial color="#593e2c" metalness={.25} roughness={.68}/></mesh></group></group><mesh position={[0,-4,-59]} rotation={[-Math.PI/2,0,0]}><planeGeometry args={[27,34]}/><meshStandardMaterial color="#34261e" roughness={.93}/></mesh><pointLight position={[3,3,-62]} color="#ebb879" intensity={90} distance={29}/></group>}
 function Limb({from,to,r=.14,color='#d7c3ad'}:{from:[number,number,number],to:[number,number,number],r?:number,color?:string}){const a=new THREE.Vector3(...from),b=new THREE.Vector3(...to),mid=a.clone().add(b).multiplyScalar(.5),len=a.distanceTo(b),rotation=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),b.clone().sub(a).normalize());return <mesh position={mid.toArray()} quaternion={rotation}><cylinderGeometry args={[r*.8,r,len,10]}/><meshStandardMaterial color={color} roughness={.7}/></mesh>}

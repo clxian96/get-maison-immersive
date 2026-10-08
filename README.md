@@ -64,3 +64,11 @@ All large chapter headings and GET Maison title/branding now use **Cormorant Gar
 - **Body / support / interface:** DM Sans.
 - Fonts are loaded from Google Fonts and require an internet connection on first load; local fallbacks are provided. Font files uploaded for reference are **not** included or redistributed.
 - No changes to scenes, scroll choreography or copy.
+
+
+## V4.5 — Privacy Ocean polish
+- New underwater depth composition: three moving silk layers at different distances, volumetric-inspired shafts, calibrated underwater lighting, suspended motes.
+- Fixes fabric vertex accumulation: cloth displacement now starts from original rest geometry for every frame.
+- Redesigned Privacy camera sequence: descend, close pass, lateral arc, wide pullback. Subsequent camera worlds and the opening curtain have not been intentionally changed.
+- Fonts remain Cormorant Garamond titles and DM Sans body as in V4.4.
+- Build not verified in package environment because npm registry was unreachable. Run npm install and npm run build locally.
